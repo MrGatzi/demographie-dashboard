@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync-parliament-data",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
