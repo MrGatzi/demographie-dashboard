@@ -42,6 +42,8 @@ export async function POST() {
       }
     );
 
+    console.log("Response:", response);
+
     if (!response.ok) {
       throw new Error(
         `Parliament API responded with status: ${response.status}`
@@ -73,7 +75,10 @@ export async function POST() {
         timestamp: new Date().toISOString(),
       });
     } else {
-      throw new Error("No valid data received from Parliament API");
+      throw new Error(
+        "No valid data received from Parliament API" +
+          JSON.stringify(parliamentData)
+      );
     }
   } catch (error) {
     console.error("Error in parliament data sync:", error);

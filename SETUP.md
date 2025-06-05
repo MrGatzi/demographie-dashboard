@@ -6,14 +6,20 @@ This project includes a Vercel Function that automatically fetches data from the
 
 ## Required Environment Variables
 
-You need to set the following environment variables in your Vercel project:
+### **For Vercel + Supabase Integration:**
+
+When you integrate Supabase with Vercel, the environment variables are automatically provided. **No additional setup needed!**
+
+The Prisma schema uses: `POSTGRES_PRISMA_URL` (automatically provided by Vercel)
+
+### **For Local Development:**
+
+Create `.env.local` with:
 
 ```bash
-# Supabase Database URL (PostgreSQL connection string)
-DATABASE_URL="postgresql://username:password@host:port/database?schema=public"
+# Copy the value from your Vercel dashboard
+POSTGRES_PRISMA_URL="postgresql://postgres:password@db.project-ref.supabase.co:6543/postgres?pgbouncer=true"
 ```
-
-**Note:** You can find your DATABASE_URL in your Supabase project settings under "Database" → "Connection String" → "URI". Make sure to replace `[YOUR-PASSWORD]` with your actual database password.
 
 ## Installation & Setup
 
@@ -50,6 +56,15 @@ CREATE TABLE parliament_data_raw (
 
 CREATE INDEX idx_parliament_data_raw_fetched_at ON parliament_data_raw(fetched_at);
 ```
+
+## Environment Variables Explained
+
+| Variable                   | Purpose                             | Needed? |
+| -------------------------- | ----------------------------------- | ------- |
+| `POSTGRES_PRISMA_URL`      | 🟢 **Prisma connection (USE THIS)** | ✅ YES  |
+| `POSTGRES_URL`             | Basic PostgreSQL connection         | ❌ NO   |
+| `SUPABASE_URL`             | Supabase JS client API              | ❌ NO   |
+| `NEXT_PUBLIC_SUPABASE_URL` | Client-side Supabase                | ❌ NO   |
 
 ## Prisma Commands
 
