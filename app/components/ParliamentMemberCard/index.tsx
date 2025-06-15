@@ -1,5 +1,3 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -10,6 +8,7 @@ import {
   Vote,
 } from "lucide-react";
 import { useState } from "react";
+import MemberHeader from "./MemberHeader";
 
 interface ParliamentMemberCardProps {
   member: string[];
@@ -119,43 +118,15 @@ export default function ParliamentMemberCard({
 
   const partyStyle = getPartyStyle(party);
 
-  // Get initials for avatar
-  const getInitials = (name: string) => {
-    // Extract initials from "Auer Katrin, Mag." format
-    const cleanName = name.replace(/,.*$/, ""); // Remove titles
-    return cleanName
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
-              <AvatarFallback
-                className={`${partyStyle.bg} ${partyStyle.text} font-semibold`}
-              >
-                {getInitials(name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg leading-tight truncate">
-                {name}
-              </h3>
-              <Badge variant={partyStyle.variant} className="mt-1">
-                {party}
-              </Badge>
-            </div>
-          </div>
-          <div className="text-xs text-muted-foreground font-mono">
-            #{index + 1}
-          </div>
-        </div>
+    <Card className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] w-full max-w-full">
+      <CardHeader className="pb-3 w-full max-w-full overflow-hidden">
+        <MemberHeader
+          name={name}
+          party={party}
+          index={index}
+          partyStyle={partyStyle}
+        />
       </CardHeader>
 
       <CardContent className="pt-0">
