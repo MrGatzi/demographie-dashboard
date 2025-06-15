@@ -16,8 +16,8 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import ErrorState from "./components/ErrorState";
-import LoadingState from "./components/LoadingState";
+import { ErrorState } from "./components/Error";
+import { LoadingState } from "./components/Loading";
 import ParliamentFilters from "./components/ParliamentFilters";
 import ParliamentMemberCard from "./components/ParliamentMemberCard";
 import ParliamentStatsCard from "./components/ParliamentStatsCard";
