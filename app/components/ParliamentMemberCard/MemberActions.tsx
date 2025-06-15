@@ -1,3 +1,4 @@
+import { useDebugStore } from "@/app/stores/debugStore";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 
@@ -12,26 +13,32 @@ export default function MemberActions({
   setShowDebug,
   profileUrl,
 }: MemberActionsProps) {
+  const { isDebugEnabled } = useDebugStore();
+
   return (
     <div className="flex items-center justify-between pt-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowDebug(!showDebug)}
-        className="text-xs"
-      >
-        {showDebug ? (
-          <>
-            <ChevronUp className="h-3 w-3 mr-1" />
-            Hide Details
-          </>
-        ) : (
-          <>
-            <ChevronDown className="h-3 w-3 mr-1" />
-            Show Details
-          </>
+      <div className="flex items-center space-x-2">
+        {isDebugEnabled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDebug(!showDebug)}
+            className="text-xs"
+          >
+            {showDebug ? (
+              <>
+                <ChevronUp className="h-3 w-3 mr-1" />
+                Hide Details
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3 mr-1" />
+                Show Details
+              </>
+            )}
+          </Button>
         )}
-      </Button>
+      </div>
 
       {profileUrl && (
         <Button

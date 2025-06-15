@@ -1,3 +1,5 @@
+import { useDebugStore } from "@/app/stores/debugStore";
+
 interface MemberDebugDetailsProps {
   name: string;
   party: string;
@@ -6,6 +8,7 @@ interface MemberDebugDetailsProps {
   lastName: string;
   profileUrl: string | null;
   member: string[];
+  showDebug: boolean;
 }
 
 export default function MemberDebugDetails({
@@ -16,7 +19,13 @@ export default function MemberDebugDetails({
   lastName,
   profileUrl,
   member,
+  showDebug,
 }: MemberDebugDetailsProps) {
+  const { isDebugEnabled } = useDebugStore();
+
+  // Only show if both global debug is enabled AND local showDebug is true
+  if (!isDebugEnabled || !showDebug) return null;
+
   return (
     <div className="mt-4 p-3 bg-muted rounded-lg">
       <h4 className="text-xs font-semibold mb-2 text-muted-foreground">

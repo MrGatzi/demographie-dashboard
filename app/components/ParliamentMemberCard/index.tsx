@@ -54,17 +54,16 @@ export default function ParliamentMemberCard({
           />
 
           {/* Debug/Details Section */}
-          {showDebug && (
-            <MemberDebugDetails
-              name={memberData.name}
-              party={memberData.party}
-              electoralDistrict={memberData.electoralDistrict}
-              state={memberData.state}
-              lastName={memberData.lastName}
-              profileUrl={memberData.profileUrl}
-              member={member}
-            />
-          )}
+          <MemberDebugDetails
+            name={memberData.name}
+            party={memberData.party}
+            electoralDistrict={memberData.electoralDistrict}
+            state={memberData.state}
+            lastName={memberData.lastName}
+            profileUrl={memberData.profileUrl}
+            member={member}
+            showDebug={showDebug}
+          />
         </div>
       </CardContent>
     </Card>
