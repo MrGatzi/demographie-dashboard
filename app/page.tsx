@@ -4,9 +4,9 @@ import { useState } from "react";
 import { ErrorState } from "./components/Error";
 import {
   ApiDebugInfo,
+  CompactPageHeader,
   DebugToggle,
   MembersGrid,
-  PageHeader,
 } from "./components/HomePage";
 import { LoadingState } from "./components/Loading";
 import ParliamentFilters from "./components/ParliamentFilters";
@@ -82,30 +82,24 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Page Header */}
-        <PageHeader onRefetch={refetch} isLoading={loading} />
+        <CompactPageHeader onRefetch={refetch} isLoading={loading} />
 
-        {/* Loading State */}
         {loading && (
           <LoadingState message="Fetching current Austrian Parliament members..." />
         )}
 
-        {/* Error State */}
         {error && (
           <ErrorState message={error} onRetry={refetch} isLoading={loading} />
         )}
 
-        {/* Data Display */}
         {parliamentData && !loading && (
           <div className="space-y-8">
-            {/* Stats Overview */}
             <ParliamentStatsCard
               totalRecords={parliamentData.rows.length}
               totalAvailable={parliamentData.count}
               partyStats={partyStats}
             />
 
-            {/* Search and Filter */}
             <ParliamentFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -116,20 +110,17 @@ export default function Home() {
               filteredCount={filteredMembers.length}
             />
 
-            {/* Members Grid */}
             <MembersGrid
               filteredMembers={filteredMembers}
               parliamentHeaders={parliamentData.header}
               onClearFilters={clearAllFilters}
             />
 
-            {/* API Debug Information - Only shows when debug is enabled */}
             <ApiDebugInfo parliamentData={parliamentData} />
           </div>
         )}
       </div>
 
-      {/* Debug Toggle - Fixed position */}
       <DebugToggle />
     </div>
   );
