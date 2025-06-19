@@ -76,6 +76,34 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Semantic sidebar variables */
+  --nav-bg: rgba(255, 255, 255, 0.95);
+  --nav-border: rgb(229, 231, 235);
+  --nav-text: rgb(107, 114, 128);
+  --nav-text-hover: rgb(37, 99, 235);
+  --nav-bg-hover: rgba(239, 246, 255, 0.5);
+  --nav-active-bg: rgb(239, 246, 255);
+  --nav-active-text: rgb(37, 99, 235);
+  --nav-active-indicator: rgb(37, 99, 235);
+
+  /* Theme toggle colors */
+  --theme-text: rgb(107, 114, 128);
+  --theme-text-hover: rgb(245, 158, 11);
+  --theme-bg-hover: rgba(254, 243, 199, 0.5);
+  --theme-sun: rgb(245, 158, 11);
+  --theme-moon: rgb(71, 85, 105);
+
+  /* Debug toggle colors */
+  --debug-text: rgb(107, 114, 128);
+  --debug-text-hover: rgb(249, 115, 22);
+  --debug-bg-hover: rgba(255, 237, 213, 0.5);
+  --debug-active-bg: rgb(249, 115, 22);
+  --debug-active-text: white;
+  --debug-indicator: white;
+
+  /* Mobile overlay */
+  --mobile-overlay: rgba(0, 0, 0, 0.6);
 }
 
 .dark {
@@ -110,6 +138,34 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Dark mode semantic variables */
+  --nav-bg: rgba(17, 24, 39, 0.95);
+  --nav-border: rgb(55, 65, 81);
+  --nav-text: rgb(209, 213, 219);
+  --nav-text-hover: rgb(96, 165, 250);
+  --nav-bg-hover: rgba(30, 58, 138, 0.1);
+  --nav-active-bg: rgba(30, 58, 138, 0.2);
+  --nav-active-text: rgb(96, 165, 250);
+  --nav-active-indicator: rgb(96, 165, 250);
+
+  /* Dark theme toggle colors */
+  --theme-text: rgb(209, 213, 219);
+  --theme-text-hover: rgb(251, 191, 36);
+  --theme-bg-hover: rgba(180, 83, 9, 0.1);
+  --theme-sun: rgb(245, 158, 11);
+  --theme-moon: rgb(148, 163, 184);
+
+  /* Dark debug toggle colors */
+  --debug-text: rgb(209, 213, 219);
+  --debug-text-hover: rgb(251, 146, 60);
+  --debug-bg-hover: rgba(194, 65, 12, 0.1);
+  --debug-active-bg: rgb(249, 115, 22);
+  --debug-active-text: white;
+  --debug-indicator: white;
+
+  /* Dark mobile overlay */
+  --mobile-overlay: rgba(0, 0, 0, 0.6);
 }
 
 @layer base {
@@ -140,16 +196,76 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  background-color: var(--nav-border);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+  opacity: 0.8;
 }
 
-/* Smooth transitions for theme changes */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
+/* Sidebar component styles */
+.sidebar-header {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.sidebar-header:hover {
+  transform: scale(1.02);
+}
+
+.sidebar-logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: linear-gradient(
+    135deg,
+    rgb(37, 99, 235),
+    rgb(79, 70, 229),
+    rgb(147, 51, 234)
+  );
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.sidebar-header:hover .sidebar-logo {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.sidebar-logo-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: linear-gradient(
+    135deg,
+    rgb(37, 99, 235),
+    rgb(79, 70, 229),
+    rgb(147, 51, 234)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.sidebar-toggle {
+  color: var(--nav-text);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+}
+
+.sidebar-toggle:hover {
+  color: var(--nav-text-hover);
+  background-color: var(--nav-bg-hover);
 }
