@@ -41,7 +41,7 @@ export default function MapPage() {
 
         {members && !loading && (
           <div className="space-y-6">
-            <SimpleMap selectedDistrict={selectedDistrict} setSelectedDistrict={setSelectedDistrict} />
+            {/* <SimpleMap selectedDistrict={selectedDistrict} setSelectedDistrict={setSelectedDistrict} /> */}
             
             <MembersGrid
               filteredMembers={filteredMembers}
