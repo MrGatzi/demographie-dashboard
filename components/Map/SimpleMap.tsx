@@ -14,6 +14,13 @@ interface WahlkreisProperties {
 
 type WahlkreisFeature = Feature<Geometry, WahlkreisProperties>;
 
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+  iconUrl: '/leaflet/marker-icon.png',
+  shadowUrl: '/leaflet/marker-shadow.png',
+});
+
 // Loading component
 const MapLoadingSpinner = () => (
   <div className="w-full h-[600px] flex items-center justify-center bg-muted/50 rounded-lg">
