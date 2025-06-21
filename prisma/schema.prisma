@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -11,17 +6,99 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
+  url      = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+// Political parties
+model Party {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  shortName   String   @unique @map("short_name")
+  color       String?  // CSS color for UI
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-model ParliamentDataRaw {
-  id           BigInt   @id @default(autoincrement())
-  data         Json
-  fetchedAt    DateTime @map("fetched_at") @db.Timestamptz(6)
-  recordCount  Int?     @map("record_count")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  // Relations
+  members ParliamentMember[]
 
+  @@map("parties")
+}
+
+// Austrian states/federal provinces
+model State {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  shortCode   String   @unique @map("short_code") // e.g., "O" for Oberösterreich
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  members ParliamentMember[]
+
+  @@map("states")
+}
+
+// Electoral districts
+model ElectoralDistrict {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique // e.g., "4D"
+  name        String   // e.g., "Traunviertel"
+  fullName    String   @map("full_name") // e.g., "4D Traunviertel"
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  members ParliamentMember[]
+
+  @@map("electoral_districts")
+}
+
+// Parliament members
+model ParliamentMember {
+  id                Int      @id @default(autoincrement())
+  fullName          String   @map("full_name") // e.g., "Auer Katrin, Mag."
+  firstName         String?  @map("first_name")
+  lastName          String   @map("last_name")
+  title             String?  // e.g., "Mag.", "Dr.", etc.
+  profileUrl        String?  @map("profile_url")
+  detailedInfo      String?  @map("detailed_info")
+  isActive          Boolean  @default(true) @map("is_active")
+  fetchedAt         DateTime @map("fetched_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Foreign keys
+  partyId           Int      @map("party_id")
+  stateId           Int      @map("state_id")
+  electoralDistrictId Int    @map("electoral_district_id")
+
+  // Relations
+  party             Party             @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  state             State             @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  electoralDistrict ElectoralDistrict @relation(fields: [electoralDistrictId], references: [id], onDelete: Cascade)
+
+  @@unique([fullName, partyId, electoralDistrictId, fetchedAt])
+  @@index([partyId])
+  @@index([stateId])
+  @@index([electoralDistrictId])
+  @@index([isActive])
   @@index([fetchedAt])
-  @@map("parliament_data_raw")
+  @@map("parliament_members")
+}
+
+// Data import sessions
+model DataImportSession {
+  id          Int      @id @default(autoincrement())
+  sessionId   String   @unique @map("session_id")
+  totalRecords Int     @map("total_records")
+  importedRecords Int  @map("imported_records")
+  status      String   // "pending", "processing", "completed", "failed"
+  startedAt   DateTime @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  error       String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([startedAt])
+  @@map("data_import_sessions")
 }

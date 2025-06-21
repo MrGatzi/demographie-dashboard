@@ -18,7 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { Sidebar } from "./components/Navigation";
+import { Sidebar } from "../components/Navigation";
 
 export default function LandingPage() {
   const features = [

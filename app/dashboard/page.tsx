@@ -1,37 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { ErrorState } from "../components/Error";
+import { ErrorState } from "../../components/Error";
 import {
   ApiDebugInfo,
   CompactPageHeader,
   MembersGrid,
-} from "../components/HomePage";
-import { LoadingState } from "../components/Loading";
-import { Sidebar } from "../components/Navigation";
-import ParliamentFilters from "../components/ParliamentFilters";
-import ParliamentStatsCard from "../components/ParliamentStatsCard";
+} from "../../components/HomePage";
+import { LoadingState } from "../../components/Loading";
+import { Sidebar } from "../../components/Navigation";
+import ParliamentFilters from "../../components/ParliamentFilters";
+import ParliamentStatsCard from "../../components/ParliamentStatsCard";
 import { useParliamentData } from "../hooks/useParliamentData";
 
 export default function Dashboard() {
-  const { parliamentData, loading, error, refetch } = useParliamentData();
+  const { members, loading, error, refetch } = useParliamentData();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedParty, setSelectedParty] = useState("all");
 
-  // Extract party statistics from the data
+  // Extract party statistics from the structured data
   const getPartyStats = () => {
-    if (!parliamentData?.rows) return {};
+    if (!members) return {};
 
     const partyCount: { [key: string]: number } = {};
 
-    parliamentData.rows.forEach((row) => {
-      // Party info is at index 1: "<span title=\"...\">SPÖ</span>"
-      const partyHtml = row[1] || "";
-      const partyMatch = partyHtml.match(/>([^<]+)</);
-      if (partyMatch) {
-        const party = partyMatch[1];
-        partyCount[party] = (partyCount[party] || 0) + 1;
-      }
+    members.forEach((member) => {
+      const partyName = member.party.short_name;
+      partyCount[partyName] = (partyCount[partyName] || 0) + 1;
     });
 
     return partyCount;
@@ -39,19 +34,12 @@ export default function Dashboard() {
 
   // Filter members based on search and party selection
   const getFilteredMembers = () => {
-    if (!parliamentData?.rows) return [];
+    if (!members) return [];
 
-    return parliamentData.rows.filter((member) => {
-      // Search filter - search in name (index 0), electoral district (index 2), and state
+    return members.filter((member) => {
+      // Search filter - search in name, electoral district, and state
       if (searchTerm) {
-        const name = member[0] || "";
-        const electoralDistrict = member[2] || "";
-        const stateHtml = member[3] || "";
-        const stateMatch = stateHtml.match(/title="([^"]+)"/);
-        const state = stateMatch ? stateMatch[1] : "";
-
-        const searchableText =
-          `${name} ${electoralDistrict} ${state}`.toLowerCase();
+        const searchableText = `${member.full_name} ${member.electoral_district.name} ${member.state.name}`.toLowerCase();
         if (!searchableText.includes(searchTerm.toLowerCase())) {
           return false;
         }
@@ -59,10 +47,7 @@ export default function Dashboard() {
 
       // Party filter
       if (selectedParty !== "all") {
-        const partyHtml = member[1] || "";
-        const partyMatch = partyHtml.match(/>([^<]+)</);
-        const party = partyMatch ? partyMatch[1] : "";
-        if (party !== selectedParty) {
+        if (member.party.short_name !== selectedParty) {
           return false;
         }
       }
@@ -94,11 +79,11 @@ export default function Dashboard() {
           <ErrorState message={error} onRetry={refetch} isLoading={loading} />
         )}
 
-        {parliamentData && !loading && (
+        {members && !loading && (
           <div className="space-y-8">
             <ParliamentStatsCard
-              totalRecords={parliamentData.rows.length}
-              totalAvailable={parliamentData.count}
+              totalRecords={members.length}
+              totalAvailable={members.length}
               partyStats={partyStats}
             />
 
@@ -108,17 +93,16 @@ export default function Dashboard() {
               selectedParty={selectedParty}
               setSelectedParty={setSelectedParty}
               partyStats={partyStats}
-              totalMembers={parliamentData.rows.length}
+              totalMembers={members.length}
               filteredCount={filteredMembers.length}
             />
 
             <MembersGrid
               filteredMembers={filteredMembers}
-              parliamentHeaders={parliamentData.header}
               onClearFilters={clearAllFilters}
             />
 
-            <ApiDebugInfo parliamentData={parliamentData} />
+            <ApiDebugInfo members={members} />
           </div>
         )}
       </div>

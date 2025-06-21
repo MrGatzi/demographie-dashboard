@@ -1,67 +1,86 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
+import { createClient } from '@supabase/supabase-js';
 
-interface ParliamentResponse {
-  pages: number;
-  count: number;
-  header: Array<{
-    label: string;
-    hidden: boolean;
-    sortable: boolean;
-  }>;
-  rows: string[][];
+// Simple type for parliament member with all relationships - matching Supabase types
+export interface ParliamentMember {
+  id: number;
+  full_name: string;
+  first_name: string | null;
+  last_name: string;
+  title: string | null;
+  profile_url: string | null;
+  detailed_info: string | null;
+  is_active: boolean;
+  fetched_at: string;
+  party: {
+    id: number;
+    name: string;
+    short_name: string;
+    color: string | null;
+  };
+  state: {
+    id: number;
+    name: string;
+    short_code: string;
+  };
+  electoral_district: {
+    id: number;
+    code: string;
+    name: string;
+    full_name: string;
+  };
 }
 
+// Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export function useParliamentData() {
-  const [parliamentData, setParliamentData] =
-    useState<ParliamentResponse | null>(null);
+  const [members, setMembers] = useState<ParliamentMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchParliamentData = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const postBody = {
-        STEP: ["1000"],
-        NRBR: ["NR"],
-        GP: ["AKT"],
-        R_WF: ["FR"],
-        R_PBW: ["WK"],
-        M: ["M"],
-        W: ["W"],
-      };
+      const { data, error: supabaseError } = await supabase
+        .from("parliament_members")
+        .select(`
+          *,
+          party:parties(*),
+          state:states(*),
+          electoral_district:electoral_districts(*)
+        `)
+        .eq('is_active', true)
+        .order('last_name', { ascending: true });
 
-      const response = await axios.post(
-        "https://www.parlament.gv.at/Filter/api/json/post?jsMode=EVAL&FBEZ=WFW_002&listeId=undefined&showAll=true&export=true",
-        postBody,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "User-Agent": "Demographics-Dashboard/1.0",
-          },
-        }
-      );
-      console.log("response", response.data);
-      setParliamentData(response.data);
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      setMembers(data || []);
+      console.log(`Loaded ${data?.length || 0} parliament members`);
     } catch (err) {
-      setError("Failed to fetch parliament data from Austrian Parliament API.");
-      console.error("Error fetching parliament data:", err);
+      setError("Failed to fetch parliament data");
+      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Automatically fetch data when hook is used
   useEffect(() => {
-    fetchParliamentData();
+    fetchData();
   }, []);
 
   return {
-    parliamentData,
+    members,
     loading,
     error,
-    refetch: fetchParliamentData,
+    refetch: fetchData,
   };
 }
+

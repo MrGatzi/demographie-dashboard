@@ -3,20 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Search, Users } from "lucide-react";
 import ParliamentMemberCard from "../ParliamentMemberCard";
+import { ParliamentMember } from "@/app/hooks/useParliamentData";
 
 interface MembersGridProps {
-  filteredMembers: string[][];
-  parliamentHeaders: Array<{
-    label: string;
-    hidden: boolean;
-    sortable: boolean;
-  }>;
+  filteredMembers: ParliamentMember[];
   onClearFilters: () => void;
 }
 
 export default function MembersGrid({
   filteredMembers,
-  parliamentHeaders,
   onClearFilters,
 }: MembersGridProps) {
   if (filteredMembers.length === 0) {
@@ -56,12 +51,10 @@ export default function MembersGrid({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredMembers.map((member, index) => (
+        {filteredMembers.map((member) => (
           <ParliamentMemberCard
-            key={`${member[0]}-${index}`}
+            key={member.id}
             member={member}
-            headers={parliamentHeaders}
-            index={index}
           />
         ))}
       </div>

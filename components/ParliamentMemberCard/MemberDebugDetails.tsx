@@ -1,4 +1,5 @@
 import { useDebugStore } from "@/app/stores/debugStore";
+import { ParliamentMember } from "@/app/hooks/useParliamentData";
 
 interface MemberDebugDetailsProps {
   name: string;
@@ -6,8 +7,8 @@ interface MemberDebugDetailsProps {
   electoralDistrict: string;
   state: string;
   lastName: string;
-  profileUrl: string | null;
-  member: string[];
+  profileUrl: string | null | undefined;
+  member: ParliamentMember;
   showDebug: boolean;
 }
 
@@ -36,16 +37,19 @@ export default function MemberDebugDetails({
           <strong>Full Name:</strong> {name}
         </div>
         <div>
-          <strong>Party:</strong> {party}
+          <strong>Party:</strong> {party} ({member.party.name})
         </div>
         <div>
-          <strong>Electoral District:</strong> {electoralDistrict}
+          <strong>Electoral District:</strong> {electoralDistrict} ({member.electoral_district.code})
         </div>
         <div>
-          <strong>State:</strong> {state}
+          <strong>State:</strong> {state} ({member.state.short_code})
         </div>
         <div>
           <strong>Last Name:</strong> {lastName}
+        </div>
+        <div>
+          <strong>Active:</strong> {member.is_active ? 'Yes' : 'No'}
         </div>
         {profileUrl && (
           <div>
@@ -63,20 +67,27 @@ export default function MemberDebugDetails({
       </div>
 
       <h4 className="text-xs font-semibold mb-2 mt-4 text-muted-foreground">
-        Raw API Data
+        Database Record
       </h4>
       <div className="space-y-1 text-xs font-mono">
-        {member.map((cell, cellIndex) => (
-          <div key={cellIndex} className="flex">
-            <span className="text-muted-foreground w-12 flex-shrink-0">
-              [{cellIndex}]:
-            </span>
-            <span className="break-all">
-              {cell === null ? "null" : String(cell).substring(0, 80)}
-              {cell && String(cell).length > 80 && "..."}
-            </span>
+        <div>
+          <strong>ID:</strong> {member.id}
+        </div>
+        <div>
+          <strong>Fetched At:</strong> {new Date(member.fetched_at).toLocaleString()}
+        </div>
+        <div>
+          <strong>Title:</strong> {member.title || 'None'}
+        </div>
+        <div>
+          <strong>First Name:</strong> {member.first_name || 'None'}
+        </div>
+        {member.detailed_info && (
+          <div>
+            <strong>Details:</strong> {member.detailed_info.substring(0, 100)}
+            {member.detailed_info.length > 100 && "..."}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
