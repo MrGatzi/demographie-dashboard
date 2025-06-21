@@ -7,6 +7,16 @@ import { useParliamentData } from "../hooks/useParliamentData";
 import { MapHeader } from "@/components/Map";
 import { useState } from "react";
 import { MembersGrid } from "@/components/HomePage";
+import dynamic from "next/dynamic";
+
+// Dynamically import SimpleMap with SSR disabled
+const SimpleMap = dynamic(
+  () => import("@/components/Map/SimpleMap").then((mod) => mod.SimpleMap),
+  {
+    ssr: false,
+    loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+  }
+);
 
 export default function MapPage() {
   const { members, loading, error, refetch } = useParliamentData();
@@ -31,7 +41,7 @@ export default function MapPage() {
 
         {members && !loading && (
           <div className="space-y-6">
-            {/* <SimpleMap selectedDistrict={selectedDistrict} setSelectedDistrict={setSelectedDistrict} /> */}
+            <SimpleMap selectedDistrict={selectedDistrict} setSelectedDistrict={setSelectedDistrict} />
             
             <MembersGrid
               filteredMembers={filteredMembers}
