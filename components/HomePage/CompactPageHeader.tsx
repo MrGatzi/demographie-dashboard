@@ -12,7 +12,7 @@ export default function CompactPageHeader({
   isLoading,
 }: CompactPageHeaderProps) {
   return (
-    <div className="mb-8 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm border overflow-hidden">
+    <div className="mb-8 bg-card text-card-foreground rounded-lg shadow-xs border overflow-hidden">
       {/* Mobile Layout */}
       <div className="block sm:hidden">
         {/* Top row - Logo and main actions */}
@@ -31,7 +31,6 @@ export default function CompactPageHeader({
             </div>
           </div>
 
-          {/* Primary action button */}
           <Button
             onClick={onRefetch}
             disabled={isLoading}
@@ -46,7 +45,6 @@ export default function CompactPageHeader({
           </Button>
         </div>
 
-        {/* Bottom row - Secondary actions */}
         <div className="flex items-center justify-center space-x-2 p-3">
           <Button
             variant="ghost"

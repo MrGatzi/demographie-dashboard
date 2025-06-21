@@ -3,14 +3,12 @@
 import { useEffect } from "react";
 import { ErrorState } from "@/components/Error";
 import {
-  ApiDebugInfo,
   CompactPageHeader,
   MembersGrid,
 } from "@/components/HomePage";
 import { LoadingState } from "@/components/Loading";
 import { Sidebar } from "@/components/Navigation";
 import ParliamentFilters from "@/components/ParliamentFilters";
-import ParliamentStatsCard from "@/components/ParliamentStatsCard";
 import { useParliamentData } from "../hooks/useParliamentData";
 import { useParliamentStore } from "../stores/parliamentStore";
 
@@ -53,12 +51,6 @@ export default function Dashboard() {
 
         {members && !loading && (
           <div className="space-y-8">
-            <ParliamentStatsCard
-              totalRecords={members.length}
-              totalAvailable={members.length}
-              partyStats={partyStats}
-            />
-
             <ParliamentFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -74,7 +66,6 @@ export default function Dashboard() {
               onClearFilters={clearAllFilters}
             />
 
-            <ApiDebugInfo members={members} />
           </div>
         )}
       </div>

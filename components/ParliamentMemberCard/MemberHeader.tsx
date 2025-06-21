@@ -5,18 +5,15 @@ import { cn } from "@/lib/utils";
 interface MemberHeaderProps {
   name: string;
   party: string;
-  index: number;
   partyStyle: {
     bg: string;
     text: string;
-    variant: "default" | "secondary" | "destructive" | "outline";
   };
 }
 
 export default function MemberHeader({
   name,
   party,
-  index,
   partyStyle,
 }: MemberHeaderProps) {
   const getInitials = (name: string) => {
@@ -43,13 +40,10 @@ export default function MemberHeader({
           <h3 className="font-semibold text-lg leading-tight truncate">
             {name}
           </h3>
-          <Badge variant={partyStyle.variant} className="mt-1">
-            {party}
+          <Badge variant="default" className={cn("mt-1", partyStyle.bg)}>
+            <span className={partyStyle.text}>{party}</span>
           </Badge>
         </div>
-      </div>
-      <div className="text-xs text-muted-foreground font-mono flex-shrink-0 whitespace-nowrap">
-        #{index + 1}
       </div>
     </div>
   );

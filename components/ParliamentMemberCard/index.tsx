@@ -19,12 +19,11 @@ export default function ParliamentMemberCard({
   const partyStyle = getPartyStyle(member.party.short_name);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] w-full max-w-full">
+    <Card className="hover:shadow-lg hover:scale-[1.02] w-full max-w-full">
       <CardHeader className="pb-3 w-full max-w-full overflow-hidden">
         <MemberHeader
           name={member.full_name}
           party={member.party.short_name}
-          index={member.id}
           partyStyle={partyStyle}
         />
       </CardHeader>
@@ -33,7 +32,7 @@ export default function ParliamentMemberCard({
         <div className="space-y-3">
           {/* Member Info */}
           <MemberInfo
-            electoralDistrict={member.electoral_district.name}
+            electoralDistrict={member.electoral_district.full_name}
             state={member.state.name}
           />
 

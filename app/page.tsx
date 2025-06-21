@@ -201,44 +201,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="text-center space-y-8 py-16 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 rounded-3xl text-white">
-          <div className="space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold">
-              Ready to Explore?
-            </h2>
-            <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto">
-              Dive into the data and discover insights about Austria's
-              parliamentary democracy.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="min-w-[200px] text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 dark:bg-gray-100 dark:text-blue-700 dark:hover:bg-gray-200"
-            >
-              <Link href="/dashboard">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                View Dashboard
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="min-w-[200px] text-lg px-8 py-6 border-white text-white hover:bg-white/10 dark:border-gray-300 dark:hover:bg-white/20"
-            >
-              <Link href="/about">
-                <Database className="w-5 h-5 mr-2" />
-                Learn About Data
-              </Link>
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );
