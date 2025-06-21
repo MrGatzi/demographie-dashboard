@@ -7,7 +7,7 @@ import { ParliamentMember } from "@/app/hooks/useParliamentData";
 
 interface MembersGridProps {
   filteredMembers: ParliamentMember[];
-  onClearFilters: () => void;
+  onClearFilters?: () => void;
 }
 
 export default function MembersGrid({

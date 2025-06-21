@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { BarChart3, Building2, Info } from "lucide-react";
+import { BarChart3, Building2, Info, Map } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,6 +12,7 @@ interface NavigationItemsProps {
 const navigation = [
   { name: "Home", href: "/", icon: Building2 },
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
+  { name: "Map", href: "/map", icon: Map }, 
   { name: "About", href: "/about", icon: Info },
 ];
 
