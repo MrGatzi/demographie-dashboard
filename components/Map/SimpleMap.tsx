@@ -22,65 +22,47 @@ const REGION_GROUPS = {
   'WIEN': {
     name: 'W',
     fullName: 'Wien',
-    districts: ['9A', '9B', '9C', '9D', '9E', '9f', '9G'],
-    bounds: [[48.12, 16.25], [48.32, 16.45]] as L.LatLngBoundsExpression,
-    zoom: 11
+    districts: ['9A', '9B', '9C', '9D', '9E', '9f', '9G']
   },
   'NIEDEROESTERREICH': {
     name: 'NÖ',
     fullName: 'Niederösterreich',
-    districts: ['3A', '3B', '3C', '3D', '3E', '3F', '3G'],
-    bounds: [[47.3, 14.2], [48.9, 17.1]] as L.LatLngBoundsExpression,
-    zoom: 8
+    districts: ['3A', '3B', '3C', '3D', '3E', '3F', '3G']
   },
   'OBEROESTERREICH': {
     name: 'OÖ',
     fullName: 'Oberösterreich',
-    districts: ['4A', '4B', '4C', '4D', '4E'],
-    bounds: [[47.7, 13.0], [48.8, 15.1]] as L.LatLngBoundsExpression,
-    zoom: 8
+    districts: ['4A', '4B', '4C', '4D', '4E']
   },
   'SALZBURG': {
     name: 'S',
     fullName: 'Salzburg',
-    districts: ['5A', '5B', '5C'],
-    bounds: [[46.8, 12.1], [47.9, 13.9]] as L.LatLngBoundsExpression,
-    zoom: 12
+    districts: ['5A', '5B', '5C']
   },
   'STEIERMARK': {
     name: 'ST',
     fullName: 'Steiermark',
-    districts: ['6A', '6B', '6C', '6D'],
-    bounds: [[46.6, 13.6], [47.8, 16.2]] as L.LatLngBoundsExpression,
-    zoom: 8
+    districts: ['6A', '6B', '6C', '6D']
   },
   'TIROL': {
     name: 'T',
     fullName: 'Tirol',
-    districts: ['7A', '7B', '7C', '7D', '7E'],
-    bounds: [[46.8, 10.5], [47.7, 12.9]] as L.LatLngBoundsExpression,
-    zoom: 8
+    districts: ['7A', '7B', '7C', '7D', '7E']
   },
   'VORARLBERG': {
     name: 'V',
     fullName: 'Vorarlberg',
-    districts: ['8A', '8B'],
-    bounds: [[47.0, 9.4], [47.6, 10.3]] as L.LatLngBoundsExpression,
-    zoom: 9
+    districts: ['8A', '8B']
   },
   'KAERNTEN': {
     name: 'K',
     fullName: 'Kärnten',
-    districts: ['2A', '2B', '2C', '2D'],
-    bounds: [[46.4, 12.8], [47.1, 15.0]] as L.LatLngBoundsExpression,
-    zoom: 9
+    districts: ['2A', '2B', '2C', '2D']
   },
   'BURGENLAND': {
     name: 'B',
     fullName: 'Burgenland',
-    districts: ['1A', '1B'],
-    bounds: [[46.8, 16.0], [47.9, 17.3]] as L.LatLngBoundsExpression,
-    zoom: 9
+    districts: ['1A', '1B']
   }
 };
 
@@ -167,17 +149,31 @@ const DistrictLabel = ({ feature, map, isDrillDown }: { feature: WahlkreisFeatur
 };
 
 // Combined region marker
-const RegionLabel = ({ regionKey, regionData, map }: { regionKey: RegionKey; regionData: typeof REGION_GROUPS[RegionKey]; map: L.Map | null }) => {
+const RegionLabel = ({ regionKey, regionData, map, geoData }: { regionKey: RegionKey; regionData: typeof REGION_GROUPS[RegionKey]; map: L.Map | null; geoData: any }) => {
   const [position, setPosition] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || !geoData) return;
     
-    const bounds = regionData.bounds as [[number, number], [number, number]];
-    const boundsObj = L.latLngBounds(bounds);
-    const center = boundsObj.getCenter();
-    setPosition([center.lat, center.lng]);
-  }, [regionData.bounds, map]);
+    // Get all districts for this region
+    const regionDistricts = geoData.features.filter((feature: WahlkreisFeature) => 
+      regionData.districts.includes(feature.properties.iso)
+    );
+    
+    if (regionDistricts.length > 0) {
+      // Create a temporary layer group to calculate the center
+      const tempLayerGroup = L.featureGroup();
+      regionDistricts.forEach((district: WahlkreisFeature) => {
+        const layer = L.geoJSON(district);
+        tempLayerGroup.addLayer(layer);
+      });
+      
+      // Get the center of all districts combined
+      const combinedBounds = tempLayerGroup.getBounds();
+      const center = combinedBounds.getCenter();
+      setPosition([center.lat, center.lng]);
+    }
+  }, [map, geoData, regionData.districts]);
 
   if (!position) return null;
 
@@ -291,39 +287,41 @@ export function SimpleMap({ selectedDistrict, setSelectedDistrict }: { selectedD
 
   // Handle drill down into a region
   const handleDrillDown = (regionKey: RegionKey) => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !geoData) return;
     
-    const regionData = REGION_GROUPS[regionKey];
+    // Get all districts for this region
+    const regionDistricts = geoData.features.filter((feature: WahlkreisFeature) => 
+      REGION_GROUPS[regionKey].districts.includes(feature.properties.iso)
+    );
+    
+    if (regionDistricts.length === 0) return;
+    
+    // Set the drill down state first
     setDrillDown({
       currentRegion: regionKey,
       originalBounds: MAP_CONFIG.maxBounds,
       originalZoom: MAP_CONFIG.zoom
     });
     
-    // Use setTimeout to ensure the GeoJSON has rendered before fitting bounds
-    setTimeout(() => {
-      if (mapRef.current) {
-        // Calculate better bounds based on actual district geometries
-        const regionDistricts = geoData?.features.filter((feature: WahlkreisFeature) => 
-          regionData.districts.includes(feature.properties.iso)
-        );
-        
-        if (regionDistricts && regionDistricts.length > 0) {
-          // Create a temporary layer to calculate actual bounds
-          const tempLayer = L.geoJSON(regionDistricts as any);
-          const actualBounds = tempLayer.getBounds();
-          
-          // Fit to actual bounds with padding
-          mapRef.current.fitBounds(actualBounds, { 
-            padding: [50, 50],
-            maxZoom: regionData.zoom 
-          });
-        } else {
-          // Fallback to predefined bounds
-          mapRef.current.fitBounds(regionData.bounds, { padding: [20, 20] });
-        }
-      }
-    }, 100);
+    // Create a temporary layer group to get the combined bounds
+    const tempLayerGroup = L.featureGroup();
+    regionDistricts.forEach((district: WahlkreisFeature) => {
+      const layer = L.geoJSON(district);
+      tempLayerGroup.addLayer(layer);
+    });
+    
+    // Get the bounds of all districts combined
+    const combinedBounds = tempLayerGroup.getBounds();
+    
+    // Use fitBounds to automatically center and zoom optimally
+    mapRef.current.fitBounds(combinedBounds, {
+      animate: false,
+      duration: 0.5,
+    });
+    
+    // Set restrictive bounds to prevent panning too far
+    const restrictiveBounds = combinedBounds.pad(0.2);
+    mapRef.current.setMaxBounds(restrictiveBounds);
   };
 
   // Handle going back to overview
@@ -336,8 +334,11 @@ export function SimpleMap({ selectedDistrict, setSelectedDistrict }: { selectedD
       originalZoom: MAP_CONFIG.zoom
     });
     
-    // Reset to original view
-    mapRef.current.setView(MAP_CONFIG.center, MAP_CONFIG.zoom);
+    // Reset to original view and restore original max bounds - no animation
+    mapRef.current.setView(MAP_CONFIG.center, MAP_CONFIG.zoom, {
+      animate: false
+    });
+    mapRef.current.setMaxBounds(MAP_CONFIG.maxBounds);
     setSelectedDistrict(null);
   };
 
@@ -504,6 +505,7 @@ export function SimpleMap({ selectedDistrict, setSelectedDistrict }: { selectedD
             regionKey={key}
             regionData={data}
             map={mapRef.current}
+            geoData={geoData}
           />
         ))}
       </MapContainer>
