@@ -9,7 +9,7 @@ interface MapHeaderProps {
 
 export function MapHeader({ onRefetch, isLoading }: MapHeaderProps) {
   return (
-    <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border-0 shadow-xl">
+    <Card>
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">

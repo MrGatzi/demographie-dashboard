@@ -1,7 +1,6 @@
 "use client";
 
 import { ErrorState } from "@/components/Error";
-import { LoadingState } from "@/components/Loading";
 import { Sidebar } from "@/components/Navigation";
 import { useParliamentData } from "../hooks/useParliamentData";
 import { MapHeader } from "@/components/Map";
@@ -14,7 +13,7 @@ const SimpleMap = dynamic(
   () => import("@/components/Map/SimpleMap").then((mod) => mod.SimpleMap),
   {
     ssr: false,
-    loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+    loading: () => <div className="h-116 bg-transparent animate-pulse rounded-lg" />
   }
 );
 
@@ -23,7 +22,6 @@ export default function MapPage() {
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
 
   const filteredMembers = members.filter(member => member.electoral_district.code === selectedDistrict);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-blue-950 dark:to-indigo-950">
       <Sidebar />
@@ -31,16 +29,12 @@ export default function MapPage() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <MapHeader onRefetch={refetch} isLoading={loading} />
 
-        {loading && (
-          <LoadingState message="Loading electoral district data..." />
-        )}
-
         {error && (
           <ErrorState message={error} onRetry={refetch} isLoading={loading} />
         )}
 
         {members && !loading && (
-          <div className="space-y-6">
+          <div className="space-y-6 pt-4">
             <SimpleMap selectedDistrict={selectedDistrict} setSelectedDistrict={setSelectedDistrict} />
             
             <MembersGrid
