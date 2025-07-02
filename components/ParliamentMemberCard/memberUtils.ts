@@ -72,23 +72,16 @@ export const getPartyStyle = (party: string) => {
     [key: string]: {
       bg: string;
       text: string;
-      variant: "default" | "secondary" | "destructive" | "outline";
     };
   } = {
-    SPÖ: { bg: "bg-red-500", text: "text-white", variant: "destructive" },
-    ÖVP: { bg: "bg-black", text: "text-white", variant: "default" },
-    FPÖ: { bg: "bg-blue-600", text: "text-white", variant: "default" },
-    GRÜNE: { bg: "bg-green-600", text: "text-white", variant: "default" },
-    NEOS: { bg: "bg-pink-500", text: "text-white", variant: "default" },
-    CSP: { bg: "bg-yellow-600", text: "text-white", variant: "default" },
-    SdP: { bg: "bg-red-400", text: "text-white", variant: "secondary" },
-    GdP: { bg: "bg-gray-600", text: "text-white", variant: "secondary" },
+    SPÖ: { bg: "bg-red-500", text: "text-white" },
+    ÖVP: { bg: "bg-black", text: "text-white" },
+    FPÖ: { bg: "bg-blue-600", text: "text-white" },
+    GRÜNE: { bg: "bg-green-600", text: "text-white" },
+    NEOS: { bg: "bg-pink-500", text: "text-white" },
+    CSP: { bg: "bg-yellow-600", text: "text-white" },
+    SdP: { bg: "bg-red-400", text: "text-white" },
+    GdP: { bg: "bg-gray-600", text: "text-white" },
   };
-  return (
-    styles[party] || {
-      bg: "bg-gray-400",
-      text: "text-white",
-      variant: "outline" as const,
-    }
-  );
+  return styles[party] || { bg: "bg-gray-400", text: "text-white" };
 };

@@ -2,8 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Search, Users } from "lucide-react";
+import { ParliamentMember } from "../../app/generated/prisma";
 import ParliamentMemberCard from "../ParliamentMemberCard";
-import { ParliamentMember } from "@/app/hooks/useParliamentData";
 
 interface MembersGridProps {
   filteredMembers: ParliamentMember[];
@@ -52,10 +52,7 @@ export default function MembersGrid({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMembers.map((member) => (
-          <ParliamentMemberCard
-            key={member.id}
-            member={member}
-          />
+          <ParliamentMemberCard key={member.id} member={member} />
         ))}
       </div>
     </div>

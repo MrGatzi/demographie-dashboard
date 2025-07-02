@@ -1,101 +1,147 @@
-import { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
+import { NextRequest } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
-import { ParliamentApiClient } from './api-client';
-import { ParliamentDatabaseService } from './database';
-import { processParliamentData } from './utils';
+import { ParliamentApiClient } from "./api-client";
+import { ParliamentDatabaseService } from "./database";
+import { MemberWithId } from "./types";
+import { processParliamentData } from "./utils";
 
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
+
+// Maximum number of concurrent requests
+const MAX_CONCURRENT_REQUESTS = 5;
 
 export async function GET(request: NextRequest) {
   const sessionId = uuidv4();
   const startedAt = new Date();
-  
+
   try {
-  
-   
     console.log(`Starting import session: ${sessionId}`);
 
-    // Fetch data from Parliament API
     const parliamentData = await ParliamentApiClient.fetchParliamentData();
-    // Wipe existing data for fresh import
     await ParliamentDatabaseService.wipeExistingData();
 
-    // Create import session for tracking
-    const importSession = await ParliamentDatabaseService.createImportSession(sessionId, startedAt);
-    // Update session with total records count
-    await ParliamentDatabaseService.updateSessionTotalRecords(importSession.id, parliamentData.count);
+    const importSession = await ParliamentDatabaseService.createImportSession(
+      sessionId,
+      startedAt
+    );
 
-    // Process and organize the data
-    const { uniqueParties, uniqueStates, uniqueDistricts, memberData } = processParliamentData(parliamentData.rows);
+    await ParliamentDatabaseService.updateSessionTotalRecords(
+      sessionId,
+      parliamentData.count
+    );
 
-    // Bulk insert reference data and get IDs
-    const [createdParties, createdStates, createdDistricts] = await Promise.all([
-      ParliamentDatabaseService.bulkInsertParties(uniqueParties),
-      ParliamentDatabaseService.bulkInsertStates(uniqueStates),
-      ParliamentDatabaseService.bulkInsertDistricts(uniqueDistricts),
-    ]);
+    const { uniqueParties, uniqueStates, uniqueDistricts, memberData } =
+      processParliamentData(parliamentData.rows);
 
-    // Create lookup maps for foreign key relationships
+    const [createdParties, createdStates, createdDistricts] = await Promise.all(
+      [
+        ParliamentDatabaseService.bulkInsertParties(uniqueParties),
+        ParliamentDatabaseService.bulkInsertStates(uniqueStates),
+        ParliamentDatabaseService.bulkInsertDistricts(uniqueDistricts),
+      ]
+    );
+
     const lookupMaps = ParliamentDatabaseService.createLookupMaps(
       createdParties,
       createdStates,
       createdDistricts
     );
 
-    // Prepare parliament member data with foreign keys
     const fetchedAt = new Date();
-    const parliamentMembersData = ParliamentDatabaseService.prepareParliamentMembersData(
-      memberData,
-      lookupMaps,
-      fetchedAt
-    );
+    const parliamentMembersData =
+      ParliamentDatabaseService.prepareParliamentMembersData(
+        memberData,
+        lookupMaps,
+        fetchedAt
+      );
 
-    // Bulk insert parliament members
-    await ParliamentDatabaseService.bulkInsertParliamentMembers(parliamentMembersData);
+    await ParliamentDatabaseService.bulkInsertParliamentMembers(
+      parliamentMembersData
+    );
 
     const processedCount = parliamentMembersData.length;
     console.log(`Successfully processed ${processedCount} members`);
 
-    // Mark import session as completed
-    await ParliamentDatabaseService.completeImportSession(importSession.id, processedCount);
+    console.log("Starting detailed data fetch in parallel...");
+    for (
+      let i = 0;
+      i < parliamentMembersData.length;
+      i += MAX_CONCURRENT_REQUESTS
+    ) {
+      const chunk = parliamentMembersData.slice(i, i + MAX_CONCURRENT_REQUESTS);
+      const promises = chunk.map(async (member: MemberWithId) => {
+        try {
+          console.log(`Fetching detailed data for member ${member.id}...`);
+          const detailedData =
+            await ParliamentApiClient.fetchDetailedMemberData(member.id);
+          await ParliamentDatabaseService.updateMemberWithDetailedData(
+            member.id,
+            detailedData
+          );
+        } catch (error) {
+          console.error(
+            `Failed to fetch detailed data for member ${member.id}:`,
+            error
+          );
+        }
+      });
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Parliament data fetched and stored successfully using bulk operations',
-      data: {
-        session_id: sessionId,
-        total_members: parliamentData.count,
-        processed_members: processedCount,
-        pages: parliamentData.pages,
-        fetched_at: fetchedAt.toISOString(),
-        import_session_completed: true,
+      await Promise.all(promises);
+
+      if (i + MAX_CONCURRENT_REQUESTS < parliamentMembersData.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    }
 
+    await ParliamentDatabaseService.completeImportSession(
+      sessionId,
+      processedCount
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message:
+          "Parliament data fetched and stored successfully using bulk operations",
+        data: {
+          session_id: sessionId,
+          total_members: parliamentData.count,
+          processed_members: processedCount,
+          detailed_data_fetched: parliamentMembersData.length,
+          pages: parliamentData.pages,
+          fetched_at: fetchedAt.toISOString(),
+          import_session_completed: true,
+        },
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
-    console.error('Error in fetch-parliament-data:', error);
-    
-    // Mark import session as failed
+    console.error("Error in fetch-parliament-data:", error);
+
     await ParliamentDatabaseService.failImportSession(
       sessionId,
-      error instanceof Error ? error.message : 'Unknown error occurred'
+      error instanceof Error ? error.message : "Unknown error occurred"
     );
-    
-    return new Response(JSON.stringify({
-      success: false,
-      session_id: sessionId,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        session_id: sessionId,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   }
-} 
+}

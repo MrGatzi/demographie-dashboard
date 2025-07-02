@@ -1,6 +1,13 @@
-import { PrismaClient } from '../../generated/prisma';
-import { PartyData, StateData, DistrictData, ParliamentMemberData, ParsedMemberData } from './types';
-import { extractDistrictCode } from './utils';
+import { PrismaClient } from "../../generated/prisma";
+import {
+  DetailedMemberResponse,
+  DistrictData,
+  ParliamentMemberData,
+  ParsedMemberData,
+  PartyData,
+  StateData,
+} from "./types";
+import { parseDetailedMemberData } from "./utils";
 
 // Singleton Prisma client to avoid connection issues
 const globalForPrisma = globalThis as unknown as {
@@ -9,7 +16,7 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 /**
  * Database service class for parliament data operations
@@ -19,60 +26,80 @@ export class ParliamentDatabaseService {
    * Wipes all existing parliament data
    */
   static async wipeExistingData(): Promise<void> {
-    console.log('Wiping existing data...');
-    // Delete in proper order to respect foreign key constraints
-    await prisma.parliamentMember.deleteMany({});
-    await prisma.party.deleteMany({});
-    await prisma.state.deleteMany({});
-    await prisma.electoralDistrict.deleteMany({});
+    console.log("Wiping existing data...");
+    await prisma.parliamentMember.deleteMany();
+    await prisma.party.deleteMany();
+    await prisma.state.deleteMany();
+    await prisma.electoralDistrict.deleteMany();
+    await prisma.dataImportSession.deleteMany();
   }
 
   /**
    * Bulk inserts parties and returns them with IDs
    */
   static async bulkInsertParties(parties: Map<string, PartyData>) {
-    console.log('Bulk inserting parties...');
+    console.log("Bulk inserting parties...");
+    const partyData = Array.from(parties.values()).map((party) => ({
+      name: party.name,
+      shortName: party.shortName,
+      color: party.color,
+    }));
+
     await prisma.party.createMany({
-      data: Array.from(parties.values()),
+      data: partyData,
+      skipDuplicates: true,
     });
-    return await prisma.party.findMany({
-      select: { id: true, shortName: true },
-    });
+
+    return prisma.party.findMany();
   }
 
   /**
    * Bulk inserts states and returns them with IDs
    */
   static async bulkInsertStates(states: Map<string, StateData>) {
-    console.log('Bulk inserting states...');
+    console.log("Bulk inserting states...");
+    const stateData = Array.from(states.values()).map((state) => ({
+      name: state.name,
+      shortCode: state.shortCode,
+    }));
+
     await prisma.state.createMany({
-      data: Array.from(states.values()),
+      data: stateData,
+      skipDuplicates: true,
     });
-    return await prisma.state.findMany({
-      select: { id: true, name: true },
-    });
+
+    return prisma.state.findMany();
   }
 
   /**
    * Bulk inserts electoral districts and returns them with IDs
    */
   static async bulkInsertDistricts(districts: Map<string, DistrictData>) {
-    console.log('Bulk inserting electoral districts...');
+    console.log("Bulk inserting electoral districts...");
+    const districtData = Array.from(districts.values()).map((district) => ({
+      code: district.code,
+      name: district.name,
+      fullName: district.fullName,
+    }));
+
     await prisma.electoralDistrict.createMany({
-      data: Array.from(districts.values()),
+      data: districtData,
+      skipDuplicates: true,
     });
-    return await prisma.electoralDistrict.findMany({
-      select: { id: true, code: true },
-    });
+
+    return prisma.electoralDistrict.findMany();
   }
 
   /**
    * Bulk inserts parliament members
    */
-  static async bulkInsertParliamentMembers(memberData: ParliamentMemberData[]) {
-    console.log('Bulk inserting parliament members...');
+  static async bulkInsertParliamentMembers(
+    membersData: ParliamentMemberData[]
+  ) {
+    console.log("Bulk inserting parliament members...");
     await prisma.parliamentMember.createMany({
-      data: memberData,
+      data: membersData,
+      skipDuplicates: true,
     });
   }
 
@@ -80,14 +107,14 @@ export class ParliamentDatabaseService {
    * Creates lookup maps for foreign key relationships
    */
   static createLookupMaps(
-    parties: Array<{ id: number; shortName: string }>,
+    parties: Array<{ id: number; name: string }>,
     states: Array<{ id: number; name: string }>,
     districts: Array<{ id: number; code: string }>
   ) {
     return {
-      partyIdMap: new Map(parties.map(p => [p.shortName, p.id])),
-      stateIdMap: new Map(states.map(s => [s.name, s.id])),
-      districtIdMap: new Map(districts.map(d => [d.code, d.id])),
+      partyIds: new Map(parties.map((p) => [p.name, p.id])),
+      stateIds: new Map(states.map((s) => [s.name, s.id])),
+      districtIds: new Map(districts.map((d) => [d.code, d.id])),
     };
   }
 
@@ -97,23 +124,27 @@ export class ParliamentDatabaseService {
   static prepareParliamentMembersData(
     memberData: ParsedMemberData[],
     lookupMaps: {
-      partyIdMap: Map<string, number>;
-      stateIdMap: Map<string, number>;
-      districtIdMap: Map<string, number>;
+      partyIds: Map<string, number>;
+      stateIds: Map<string, number>;
+      districtIds: Map<string, number>;
     },
     fetchedAt: Date
   ): ParliamentMemberData[] {
-    console.log('Preparing parliament members data...');
-    return memberData.map(parsedData => ({
-      fullName: parsedData.fullName,
-      firstName: parsedData.firstName,
-      lastName: parsedData.lastName,
-      title: parsedData.title,
-      profileUrl: parsedData.profileUrl,
-      detailedInfo: parsedData.detailedInfo,
-      partyId: lookupMaps.partyIdMap.get(parsedData.party)!,
-      stateId: lookupMaps.stateIdMap.get(parsedData.state)!,
-      electoralDistrictId: lookupMaps.districtIdMap.get(extractDistrictCode(parsedData.electoralDistrict))!,
+    console.log("Preparing parliament members data...");
+    return memberData.map((member) => ({
+      id: member.id,
+      fullName: member.fullName,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      title: member.title,
+      profileUrl: member.profileUrl,
+      profileImageUrl: member.profileImageUrl,
+      detailedInfo: member.detailedInfo,
+      partyId: lookupMaps.partyIds.get(member.party)!,
+      stateId: lookupMaps.stateIds.get(member.state)!,
+      electoralDistrictId: lookupMaps.districtIds.get(
+        member.electoralDistrict
+      )!,
       fetchedAt,
       isActive: true,
     }));
@@ -123,12 +154,12 @@ export class ParliamentDatabaseService {
    * Creates a new import session
    */
   static async createImportSession(sessionId: string, startedAt: Date) {
-    return await prisma.dataImportSession.create({
+    return prisma.dataImportSession.create({
       data: {
         sessionId,
         totalRecords: 0,
         importedRecords: 0,
-        status: 'processing',
+        status: "processing",
         startedAt,
       },
     });
@@ -137,9 +168,12 @@ export class ParliamentDatabaseService {
   /**
    * Updates import session with total records
    */
-  static async updateSessionTotalRecords(sessionId: number, totalRecords: number) {
-    await prisma.dataImportSession.update({
-      where: { id: sessionId },
+  static async updateSessionTotalRecords(
+    sessionId: string,
+    totalRecords: number
+  ) {
+    return prisma.dataImportSession.update({
+      where: { sessionId },
       data: { totalRecords },
     });
   }
@@ -147,12 +181,15 @@ export class ParliamentDatabaseService {
   /**
    * Marks import session as completed
    */
-  static async completeImportSession(sessionId: number, importedRecords: number) {
-    await prisma.dataImportSession.update({
-      where: { id: sessionId },
+  static async completeImportSession(
+    sessionId: string,
+    processedRecords: number
+  ) {
+    return prisma.dataImportSession.update({
+      where: { sessionId },
       data: {
-        importedRecords,
-        status: 'completed',
+        status: "completed",
+        importedRecords: processedRecords,
         completedAt: new Date(),
       },
     });
@@ -162,17 +199,32 @@ export class ParliamentDatabaseService {
    * Marks import session as failed
    */
   static async failImportSession(sessionId: string, error: string) {
-    try {
-      await prisma.dataImportSession.update({
-        where: { sessionId },
-        data: {
-          status: 'failed',
-          error,
-          completedAt: new Date(),
-        },
-      });
-    } catch (updateError) {
-      console.error('Failed to update import session:', updateError);
-    }
+    return prisma.dataImportSession.update({
+      where: { sessionId },
+      data: {
+        status: "failed",
+        error,
+        completedAt: new Date(),
+      },
+    });
   }
-} 
+
+  /**
+   * Updates a parliament member with detailed data
+   */
+  static async updateMemberWithDetailedData(
+    memberId: string,
+    detailedData: DetailedMemberResponse
+  ): Promise<void> {
+    const parsedData = parseDetailedMemberData(detailedData);
+    console.log(parsedData);
+
+    await prisma.parliamentMember.update({
+      where: { id: memberId },
+      data: {
+        birthDate: parsedData.birthDate,
+        birthPlace: parsedData.birthPlace,
+      },
+    });
+  }
+}

@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   output   = "../app/generated/prisma"
@@ -9,14 +8,15 @@ datasource db {
   url      = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-// Political parties
+
+/// @@allow('all', true)
 model Party {
   id          Int      @id @default(autoincrement())
   name        String   @unique
-  shortName   String   @unique @map("short_name")
+  shortName   String   @unique
   color       String?  // CSS color for UI
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
   // Relations
   members ParliamentMember[]
@@ -24,13 +24,13 @@ model Party {
   @@map("parties")
 }
 
-// Austrian states/federal provinces
+/// @@allow('all', true)
 model State {
   id          Int      @id @default(autoincrement())
   name        String   @unique
-  shortCode   String   @unique @map("short_code") // e.g., "O" for Oberösterreich
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shortCode   String   @unique // e.g., "O" for Oberösterreich
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
   // Relations
   members ParliamentMember[]
@@ -38,14 +38,14 @@ model State {
   @@map("states")
 }
 
-// Electoral districts
+/// @@allow('all', true)
 model ElectoralDistrict {
   id          Int      @id @default(autoincrement())
   code        String   @unique // e.g., "4D"
   name        String   // e.g., "Traunviertel"
-  fullName    String   @map("full_name") // e.g., "4D Traunviertel"
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  fullName    String   // e.g., "4D Traunviertel"
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
   // Relations
   members ParliamentMember[]
@@ -53,24 +53,36 @@ model ElectoralDistrict {
   @@map("electoral_districts")
 }
 
-// Parliament members
+/// @@allow('all', true)
 model ParliamentMember {
-  id                Int      @id @default(autoincrement())
-  fullName          String   @map("full_name") // e.g., "Auer Katrin, Mag."
-  firstName         String?  @map("first_name")
-  lastName          String   @map("last_name")
+  id                String   @id // This will be the parliament profile ID
+  fullName          String   // e.g., "Auer Katrin, Mag."
+  firstName         String?
+  lastName          String
   title             String?  // e.g., "Mag.", "Dr.", etc.
-  profileUrl        String?  @map("profile_url")
-  detailedInfo      String?  @map("detailed_info")
-  isActive          Boolean  @default(true) @map("is_active")
-  fetchedAt         DateTime @map("fetched_at") @db.Timestamptz(6)
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  profileUrl        String?
+  profileImageUrl   String?  // Store the full URL to the profile image
+  detailedInfo      String?
+  isActive          Boolean  @default(true)
+  fetchedAt         DateTime @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+
+  // Additional fields for detailed member data
+  birthDate         DateTime? @db.Date
+  birthPlace        String?
+  occupation        String?
+  careerHistory     Json?
+  education         Json?
+  politicalFunctions Json?
+  committees        Json?
+  socialMedia       Json?
+  detailedDataFetchedAt DateTime? @db.Timestamptz(6)
 
   // Foreign keys
-  partyId           Int      @map("party_id")
-  stateId           Int      @map("state_id")
-  electoralDistrictId Int    @map("electoral_district_id")
+  partyId           Int
+  stateId           Int
+  electoralDistrictId Int
 
   // Relations
   party             Party             @relation(fields: [partyId], references: [id], onDelete: Cascade)
@@ -83,22 +95,45 @@ model ParliamentMember {
   @@index([electoralDistrictId])
   @@index([isActive])
   @@index([fetchedAt])
+  @@index([detailedDataFetchedAt])
   @@map("parliament_members")
 }
 
-// Data import sessions
+/// @@allow('all', true)
 model DataImportSession {
   id          Int      @id @default(autoincrement())
-  sessionId   String   @unique @map("session_id")
-  totalRecords Int     @map("total_records")
-  importedRecords Int  @map("imported_records")
+  sessionId   String   @unique
+  totalRecords Int
+  importedRecords Int
   status      String   // "pending", "processing", "completed", "failed"
-  startedAt   DateTime @map("started_at") @db.Timestamptz(6)
-  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  startedAt   DateTime @db.Timestamptz(6)
+  completedAt DateTime? @db.Timestamptz(6)
   error       String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([status])
   @@index([startedAt])
   @@map("data_import_sessions")
 }
+
+// Enable Row Level Security and create policies
+/// This SQL runs after the migrations
+/// ```sql
+/// -- Enable RLS
+/// ALTER TABLE parties ENABLE ROW LEVEL SECURITY;
+/// ALTER TABLE states ENABLE ROW LEVEL SECURITY;
+/// ALTER TABLE electoral_districts ENABLE ROW LEVEL SECURITY;
+/// ALTER TABLE parliament_members ENABLE ROW LEVEL SECURITY;
+/// ALTER TABLE data_import_sessions ENABLE ROW LEVEL SECURITY;
+/// 
+/// -- Create policies for public read access
+/// CREATE POLICY "Enable read access for all users" ON parties FOR SELECT USING (true);
+/// CREATE POLICY "Enable read access for all users" ON states FOR SELECT USING (true);
+/// CREATE POLICY "Enable read access for all users" ON electoral_districts FOR SELECT USING (true);
+/// CREATE POLICY "Enable read access for all users" ON parliament_members FOR SELECT USING (true);
+/// CREATE POLICY "Enable read access for all users" ON data_import_sessions FOR SELECT USING (true);
+/// 
+/// -- Grant usage on schema and tables
+/// GRANT USAGE ON SCHEMA public TO anon, authenticated;
+/// GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+/// ```
