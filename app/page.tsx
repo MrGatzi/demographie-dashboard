@@ -79,7 +79,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-blue-950 dark:to-indigo-950">
+    <div className="min-h-screen bg-green-500">
       <Sidebar />
 
       <div className="container mx-auto px-4 py-16 max-w-7xl">
@@ -200,7 +200,6 @@ export default function LandingPage() {
             })}
           </div>
         </div>
-
       </div>
     </div>
   );
